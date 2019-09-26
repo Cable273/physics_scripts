@@ -27,7 +27,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern'],'size':26})
 rc('text', usetex=True)
 # matplotlib.rcParams['figure.dpi'] = 400
 
-N = 15
+N = 6
 pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
 pxp_syms = model_sym_data(pxp,[translational_general(pxp,order=3)])
@@ -171,7 +171,7 @@ def lie_algebra_error(coef,plot=False):
     if plot == True:
         H = H_operations.add(H0,V1,np.array([1,coef[0]]))
         H = H_operations.add(H,V2,np.array([1,coef[1]]))
-        # H = H_operations.add(H,V3,np.array([1,coef[2]]))
+        H = H_operations.add(H,V3,np.array([1,coef[2]]))
         H.sector.find_eig()
         z=zm_state(3,1,pxp)
         fidelity(z,H).plot(np.arange(0,20,0.01),z)
@@ -189,8 +189,8 @@ def lie_algebra_error(coef,plot=False):
     Hp = H_operations.add(Hp,Hp_ops[7],np.array([1,coef[1]]))
     Hp = H_operations.add(Hp,Hp_ops[8],np.array([1,coef[1]]))
 
-    # Hp = H_operations.add(Hp,Hp_ops[9],np.array([1,coef[2]]))
-    # Hp = H_operations.add(Hp,Hp_ops[10],np.array([1,coef[2]]))
+    Hp = H_operations.add(Hp,Hp_ops[9],np.array([1,coef[2]]))
+    Hp = H_operations.add(Hp,Hp_ops[10],np.array([1,coef[2]]))
 
 
     Hp = Hp.sector.matrix()
@@ -205,10 +205,36 @@ def lie_algebra_error(coef,plot=False):
     diff_Hp = lie_Hp - Hp
     diff_Hm = lie_Hm + Hm
     error = F_norm(diff_Hp)
-    print(coef,error)
+    # print(coef,error)
     return error
 
-def harmonic_spacing_error(coef,plot=False):
+def fidelity_eval(psi_energy,e,t):
+    evolved_state = time_evolve_state(psi_energy,e,t)
+    f= np.abs(np.vdot(evolved_state,psi_energy))**2
+    return -f
+
+def fidelity_error(coef,plot=False):
+    H = H_operations.add(H0,V1,np.array([1,coef[0]]))
+    H = H_operations.add(H,V2,np.array([1,coef[1]]))
+    H = H_operations.add(H,V3,np.array([1,coef[2]]))
+    H.sector.find_eig()
+    z=zm_state(3,1,pxp)
+
+    if plot == True:
+        fidelity(z,H).plot(np.arange(0,20,0.01),z)
+        plt.show()
+
+    psi_energy = np.conj(H.sector.eigvectors()[pxp.keys[z.ref],:])
+    from scipy.optimize import minimize_scalar
+    res = minimize_scalar(lambda t:fidelity_eval(psi_energy,H.sector.eigvalues(),t),method="golden",bracket=(3.0,4.0))
+    f_max = fidelity_eval(psi_energy,H.sector.eigvalues(),res.x)
+    # print(coef,res.x,f_max)
+    if res.x<1e-5:
+        return 1000
+    else:
+        return f_max
+
+def z_var_error(coef,plot=False):
     # H = H_operations.add(H0,V1,np.array([1,coef[0]]))
     # H = H_operations.add(H,V2,np.array([1,coef[1]]))
     # H = H_operations.add(H,V3,np.array([1,coef[2]]))
@@ -225,8 +251,8 @@ def harmonic_spacing_error(coef,plot=False):
     Hp = H_operations.add(Hp,Hp_ops[7],np.array([1,coef[1]]))
     Hp = H_operations.add(Hp,Hp_ops[8],np.array([1,coef[1]]))
 
-    # Hp = H_operations.add(Hp,Hp_ops[9],np.array([1,coef[2]]))
-    # Hp = H_operations.add(Hp,Hp_ops[10],np.array([1,coef[2]]))
+    Hp = H_operations.add(Hp,Hp_ops[9],np.array([1,coef[2]]))
+    Hp = H_operations.add(Hp,Hp_ops[10],np.array([1,coef[2]]))
 
 
     Hp = Hp.sector.matrix()
@@ -252,19 +278,65 @@ def harmonic_spacing_error(coef,plot=False):
         exp_Hz_2  = np.vdot(fsa_basis[:,n],np.dot(Hz2,fsa_basis[:,n]))
         exp_Hz  = np.vdot(fsa_basis[:,n],np.dot(Hz,fsa_basis[:,n]))
         error += exp_Hz_2 - np.power(exp_Hz,2)
-    print(coef,error)
+    # print(coef,error)
     return error
 
+d=0.01
+coef_range = np.arange(-0.2,0.2+d,d)
+M = np.zeros((np.size(coef_range),np.size(coef_range)))
+M2 = np.zeros((np.size(coef_range),np.size(coef_range)))
+M3 = np.zeros((np.size(coef_range),np.size(coef_range)))
+pbar=ProgressBar()
+for n in pbar(range(0,np.size(coef_range,axis=0))):
+    for m in range(0,np.size(coef_range,axis=0)):
+        M[n,m] = lie_algebra_error(np.array([coef_range[n],coef_range[m],0]))
+        M2[n,m] = z_var_error(np.array([coef_range[n],coef_range[m],0]))
+        M3[n,m] = -fidelity_error(np.array([coef_range[n],coef_range[m],0]))
+x,y = np.meshgrid(coef_range,coef_range)
+
+# plt.contourf(x,y,M,levels=np.arange(0,10,0.2))
+# plt.colorbar()
+# plt.scatter(-0.170039,0.099826,marker="x",color="red",s=100)
+# plt.xlabel(r"$\lambda_2$")
+# plt.ylabel(r"$\lambda_1$",rotation=0)
+# plt.title(r"$PXP$ $Z_3$ perts, $\vert \vert [H^z,H^+]-H^+ \vert \vert_F, N=6$")
+# plt.show()
+
+# plt.contourf(x,y,M2,levels=np.arange(0,1,0.05))
+# plt.colorbar()
+# plt.scatter(-0.16439141,0.10456971,marker="x",color="red",s=100)
+# plt.xlabel(r"$\lambda_2$")
+# plt.ylabel(r"$\lambda_1$",rotation=0)
+# plt.title(r"$PXP$ $Z_3$ perts, $\vert \vert [H^z,H^+]-H^+ \vert \vert_F, N=6$")
+# plt.show()
+
+# plt.contourf(x,y,M3,levels=np.arange(0,1.05,0.005))
+# plt.colorbar()
+# plt.scatter(-0.10390399,0.18243653,marker="x",color="red",s=100)
+# plt.xlabel(r"$\lambda_2$")
+# plt.ylabel(r"$\lambda_1$",rotation=0)
+# plt.title(r"$PXP$ $Z_3$ perts, $\vert \vert [H^z,H^+]-H^+ \vert \vert_F, N=6$")
+# plt.show()
+
+np.save("pxp,z3_perts,coef_rangex,"+str(pxp.N),x)
+np.save("pxp,z3_perts,coef_rangey,"+str(pxp.N),y)
+np.save("pxp,z3_perts,M,lie_algebra_error,"+str(pxp.N),M)
+np.save("pxp,z3_perts,M,z_var_error,"+str(pxp.N),M2)
+np.save("pxp,z3_perts,M,fid_error,"+str(pxp.N),M3)
+
 # coef = np.array([0.18243653,-0.10390499,0.054452])
-coef = np.array([0.18243653,-0.10390499])
-# coef2 = np.array([0.09982653,-0.17003587,0.01092036])
-# coef = np.array([0.2451307,0,0])
-from scipy.optimize import minimize
-res = minimize(lambda params: lie_algebra_error(params),method="powell",x0=coef)
-lie_algebra_error(res.x,plot=True)
-res = minimize(lambda params: harmonic_spacing_error(params),method="powell",x0=coef)
-lie_algebra_error(res.x,plot=True)
-lie_algebra_error(coef,plot=True)
-# lie_algebra_error(coef,plot=True)
-# lie_algebra_error(coef2,plot=True)
+# # coef = np.array([0.18243653,-0.10390499])
+# # coef2 = np.array([0.09982653,-0.17003587,0.01092036])
+# # coef = np.array([0.2451307,0,0])
+# from scipy.optimize import minimize
+# # res = minimize(lambda params: lie_algebra_error(params),method="powell",x0=coef)
+# # res = minimize(lambda params: z_var_error(params),method="powell",x0=coef)
+# res = minimize(lambda params: fidelity_error(params),method="powell",x0=coef)
+# print(res.x)
+# lie_algebra_error(res.x,plot=True)
+# # res = minimize(lambda params: harmonic_spacing_error(params),method="powell",x0=coef)
+# # lie_algebra_error(res.x,plot=True)
+# # lie_algebra_error(coef,plot=True)
+# # # lie_algebra_error(coef,plot=True)
+# # # lie_algebra_error(coef2,plot=True)
 
