@@ -31,7 +31,7 @@ for count in range(0,np.size(N_vals,axis=0)):
     N = N_vals[count]
     pxp = unlocking_System([0],"periodic",2,N)
     pxp.gen_basis()
-    pxp_syms=model_sym_data(pxp,[translational_general(pxp,order=3)])
+    pxp_syms=model_sym_data(pxp,[translational_general(pxp,order=3),PT(pxp)])
     z=zm_state(3,1,pxp)
     k=pxp_syms.find_k_ref(z.ref)
 
@@ -127,19 +127,19 @@ for count in range(0,np.size(N_vals,axis=0)):
             H.sector.find_eig(k[n])
         ls = level_stats(H.sector.eigvalues(k[0]))
         r[t_index] = ls.mean()
-        print(ls.mean())
+        # print(ls.mean())
 
     #replace zero manually, need to use parity symmetry
     # zero_index = find_index_bisection(0,t)
-    zero_index = int(min_t/d)
-    pxp_syms=model_sym_data(pxp,[translational(pxp),parity(pxp)])
-    z=zm_state(3,1,pxp)
-    k=[0,0]
-    H = spin_Hamiltonian(pxp,"x",pxp_syms)
-    H.gen(k)
-    H.sector.find_eig(k)
-    ls = level_stats(H.sector.eigvalues(k))
-    r[zero_index] = ls.mean()
+    # zero_index = int(min_t/d)
+    # pxp_syms=model_sym_data(pxp,[translational(pxp),parity(pxp)])
+    # z=zm_state(3,1,pxp)
+    # k=[0,0]
+    # H = spin_Hamiltonian(pxp,"x",pxp_syms)
+    # H.gen(k)
+    # H.sector.find_eig(k)
+    # ls = level_stats(H.sector.eigvalues(k))
+    # r[zero_index] = ls.mean()
 
     np.save("pxp,z3_perts,level_stat_scan,"+str(N),r)
     np.save("pxp,z3_perts,t,"+str(N),t)
