@@ -35,76 +35,32 @@ for count in range(0,np.size(N_vals,axis=0)):
     z=zm_state(3,1,pxp)
     k=pxp_syms.find_k_ref(z.ref)
 
-    V1_ops = dict()
-    V1_ops[0] = Hamiltonian(pxp,pxp_syms)
-    V1_ops[0].site_ops[1] = np.array([[0,1],[1,0]])
-    V1_ops[0].model = np.array([[0,1,0,0]])
-    V1_ops[0].model_coef = np.array([1])
+    V1 = Hamiltonian(pxp,pxp_syms)
+    V1.site_ops[1] = np.array([[0,1],[1,0]])
+    V1.model = np.array([[0,1,0,0],[0,0,1,0],[0,1,0,0],[0,0,1,0]])
+    V1.model_coef = np.array([1,1,1,1])
+    V1.uc_size = np.array([3,3,3,3])
+    V1.uc_pos = np.array([1,2,2,1])
     for n in range(0,np.size(k,axis=0)):
-        V1_ops[0].gen(k_vec=k[n],uc_size=3,uc_pos=1)
+        V1.gen(k_vec=k[n])
 
-    V1_ops[1] = Hamiltonian(pxp,pxp_syms)
-    V1_ops[1].site_ops[1] = np.array([[0,1],[1,0]])
-    V1_ops[1].model = np.array([[0,0,1,0]])
-    V1_ops[1].model_coef = np.array([1])
+    V2 = Hamiltonian(pxp,pxp_syms)
+    V2.site_ops[1] = np.array([[0,1],[1,0]])
+    V2.model = np.array([[0,0,1,0],[0,1,0,0]])
+    V2.model_coef = np.array([1,1])
+    V2.uc_size = np.array([3,3])
+    V2.uc_pos = np.array([0,0])
     for n in range(0,np.size(k,axis=0)):
-        V1_ops[1].gen(k_vec=k[n],uc_size=3,uc_pos=2)
+        V2.gen(k_vec=k[n])
 
-    V1_ops[2] = Hamiltonian(pxp,pxp_syms)
-    V1_ops[2].site_ops[1] = np.array([[0,1],[1,0]])
-    V1_ops[2].model = np.array([[0,1,0,0]])
-    V1_ops[2].model_coef = np.array([1])
+    V3 = Hamiltonian(pxp,pxp_syms)
+    V3.site_ops[1] = np.array([[0,1],[1,0]])
+    V3.model = np.array([[0,1,1,1,0],[0,1,1,1,0]])
+    V3.model_coef = np.array([1,1])
+    V3.uc_size = np.array([3,3])
+    V3.uc_pos = np.array([0,2])
     for n in range(0,np.size(k,axis=0)):
-        V1_ops[2].gen(k_vec=k[n],uc_size=3,uc_pos=2)
-
-    V1_ops[3] = Hamiltonian(pxp,pxp_syms)
-    V1_ops[3].site_ops[1] = np.array([[0,1],[1,0]])
-    V1_ops[3].model = np.array([[0,0,1,0]])
-    V1_ops[3].model_coef = np.array([1])
-    for n in range(0,np.size(k,axis=0)):
-        V1_ops[3].gen(k_vec=k[n],uc_size=3,uc_pos=1)
-
-    V1 = V1_ops[0]
-    for n in range(1,len(V1_ops)):
-        V1=H_operations.add(V1,V1_ops[n],np.array([1,1]))
-
-    V2_ops = dict()
-    V2_ops[0] = Hamiltonian(pxp,pxp_syms)
-    V2_ops[0].site_ops[1] = np.array([[0,1],[1,0]])
-    V2_ops[0].model = np.array([[0,0,1,0]])
-    V2_ops[0].model_coef = np.array([1])
-    for n in range(0,np.size(k,axis=0)):
-        V2_ops[0].gen(k_vec=k[n],uc_size=3,uc_pos=0)
-
-    V2_ops[1] = Hamiltonian(pxp,pxp_syms)
-    V2_ops[1].site_ops[1] = np.array([[0,1],[1,0]])
-    V2_ops[1].model = np.array([[0,1,0,0]])
-    V2_ops[1].model_coef = np.array([1])
-    for n in range(0,np.size(k,axis=0)):
-        V2_ops[1].gen(k_vec=k[n],uc_size=3,uc_pos=0)
-
-    V2 = V2_ops[0]
-    for n in range(1,len(V2_ops)):
-        V2=H_operations.add(V2,V2_ops[n],np.array([1,1]))
-
-    V3_ops = dict()
-    V3_ops[0] = Hamiltonian(pxp,pxp_syms)
-    V3_ops[0].site_ops[1] = np.array([[0,1],[1,0]])
-    V3_ops[0].model = np.array([[0,1,1,1,0]])
-    V3_ops[0].model_coef = np.array([1])
-    for n in range(0,np.size(k,axis=0)):
-        V3_ops[0].gen(k_vec=k[n],uc_size=3,uc_pos=0)
-
-    V3_ops[1] = Hamiltonian(pxp,pxp_syms)
-    V3_ops[1].site_ops[1] = np.array([[0,1],[1,0]])
-    V3_ops[1].model = np.array([[0,1,1,1,0]])
-    V3_ops[1].model_coef = np.array([1])
-    for n in range(0,np.size(k,axis=0)):
-        V3_ops[1].gen(k_vec=k[n],uc_size=3,uc_pos=2)
-
-    V3 = V3_ops[0]
-    for n in range(1,len(V3_ops)):
-        V3=H_operations.add(V3,V3_ops[n],np.array([1,1]))
+        V3.gen(k_vec=k[n])
 
     H0 = spin_Hamiltonian(pxp,"x",pxp_syms)
     for n in range(0,np.size(k,axis=0)):
