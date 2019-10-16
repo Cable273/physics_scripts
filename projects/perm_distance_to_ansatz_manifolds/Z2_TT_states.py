@@ -85,7 +85,9 @@ psi_energy = np.conj(u[z_index,:])
 t=np.arange(0,10,0.1)
 evolved_states = np.zeros((np.size(H_perm,axis=0),np.size(t)),dtype=complex)
 for n in range(0,np.size(t,axis=0)):
-    evolved_states[:,n] = time_evolve_state(psi_energy,e,t[n])
+    evolved_state_perm_energy = time_evolve_state(psi_energy,e,t[n])
+    evolved_state_perm = np.dot(u,evolved_state_perm_energy)
+    evolved_states[:,n] = evolved_state_perm
 
 #minimize distance of evolved states with tensor tree ansatz
 def TT_wf(theta1,phi1,theta2,phi2):
