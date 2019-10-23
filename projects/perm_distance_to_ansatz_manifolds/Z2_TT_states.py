@@ -27,7 +27,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern'],'size':26})
 rc('text', usetex=True)
 # matplotlib.rcParams['figure.dpi'] = 400
 
-N = 6
+N = 12
 pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
 pxp_syms = model_sym_data(pxp,[translational(pxp),parity(pxp)])
@@ -113,12 +113,16 @@ def TT_wf_distance(psi,tt_params):
     diff = psi - psi_tt
     return np.real(np.vdot(diff,diff))
 
+wf = TT_wf(0,0,math.pi/2,0)
+from Diagnostics import print_wf
+print_wf(wf,pxp,1e-2)
 from scipy.optimize import minimize
 TT_distance = np.zeros(np.size(t))
 pbar=ProgressBar()
 for n in pbar(range(0,np.size(evolved_states,axis=1))):
     if n == 0:
-        res = minimize(lambda tt_params: TT_wf_distance(evolved_states[:,n],tt_params),method="nelder-mead",x0=[0,0,0,0])
+        res = minimize(lambda tt_params: TT_wf_distance(evolved_states[:,n],tt_params),method="nelder-mead",x0=[0,0,math.pi/2,0])
+        print(res.x)
         last_coef = res.x
     else:
         res = minimize(lambda tt_params: TT_wf_distance(evolved_states[:,n],tt_params),method="nelder-mead",x0=last_coef)

@@ -9,7 +9,6 @@ import pandas
 import matplotlib.pyplot as plt
 from progressbar import ProgressBar
 from scipy.sparse import linalg as sparse_linalg
-sys.path.append(file_dir)
 
 from Hamiltonian_Classes import Hamiltonian,H_table,clock_Hamiltonian,spin_Hamiltonian,H_operations
 from System_Classes import unlocking_System,U1_system
@@ -128,13 +127,13 @@ def is_zero(a,tol):
     return (np.abs(a)<tol).all()
 
 print("H0")
-print(is_zero(com(H0.sector.matrix(),PT),1e-5))
+print(is_zero(com(H0.sector.matrix(),TP),1e-5))
 print("V1")
-print(is_zero(com(V1.sector.matrix(),PT),1e-5))
+print(is_zero(com(V1.sector.matrix(),TP),1e-5))
 print("V2")
-print(is_zero(com(V2.sector.matrix(),PT),1e-5))
+print(is_zero(com(V2.sector.matrix(),TP),1e-5))
 print("V3")
-print(is_zero(com(V3.sector.matrix(),PT),1e-5))
+print(is_zero(com(V3.sector.matrix(),TP),1e-5))
 
 # H.sector.find_eig()
 # eig_overlap(z,H).plot()

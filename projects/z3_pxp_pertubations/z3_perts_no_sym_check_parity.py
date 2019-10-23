@@ -26,7 +26,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern'],'size':26})
 rc('text', usetex=True)
 # matplotlib.rcParams['figure.dpi'] = 400
 
-N = 15
+N = 12
 pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
 pxp_syms=model_sym_data(pxp,[translational(pxp)])
@@ -110,6 +110,17 @@ for n in range(0,np.size(pxp.basis,axis=0)):
     new_index = pxp.keys[new_ref]
     P[new_index,n] += 1
 
+T = np.zeros((pxp.dim,pxp.dim))
+trans = translational(pxp)
+for n in range(0,np.size(pxp.basis,axis=0)):
+    new_ref = trans.sym_op(pxp.basis_refs[n],1)
+    if new_ref in pxp.basis_refs:
+        T[pxp.keys[new_ref],n] += 1
+T3 = np.dot(T,np.dot(T,T))
+PT = np.dot(P,T)
+TP = np.dot(T,P)
+    
+
 def com(a,b):
     return np.dot(a,b) - np.dot(b,a)
 
@@ -117,13 +128,13 @@ def is_zero(A):
     return (np.abs(A)<1e-5).all()
 
 print("H0")
-print(is_zero(com(H0.sector.matrix(),P)))
+print(is_zero(com(H0.sector.matrix(),PT)))
 print("V1")
-print(is_zero(com(V1.sector.matrix(),P)))
+print(is_zero(com(V1.sector.matrix(),PT)))
 print("V2")
-print(is_zero(com(V2.sector.matrix(),P)))
+print(is_zero(com(V2.sector.matrix(),PT)))
 print("V3")
-print(is_zero(com(V3.sector.matrix(),P)))
+print(is_zero(com(V3.sector.matrix(),PT)))
 
 z=zm_state(3,1,pxp)
 H.sector.find_eig()

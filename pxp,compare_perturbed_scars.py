@@ -27,7 +27,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern'],'size':26})
 rc('text', usetex=True)
 # matplotlib.rcParams['figure.dpi'] = 400
 
-N = 14
+N = 18
 pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
 pxp_syms = model_sym_data(pxp,[translational(pxp),parity(pxp)])
@@ -80,6 +80,8 @@ print(np.diag(M))
 plt.matshow(np.abs(M))
 plt.colorbar()
 plt.show()
+u,s,vh = np.linalg.svd(M)
+print(np.sum(s))
 
 ppxp_eig_largest_pxxxp_scar_overlap = np.zeros(np.size(scar_indices_pxxxp))
 ppxp_eig_largest_pxxxp_scar_indices = np.zeros(np.size(scar_indices_pxxxp))

@@ -124,78 +124,83 @@ for n in range(0,fsa_dim):
     current_stateK = next_stateK
 
 fsa_basis = np.transpose(fsa_basis)
-krylov_basis = np.transpose(krylov_basis)
-gs = gram_schmidt(krylov_basis)
-gs.ortho()
-krylov_basis = gs.ortho_basis
-# krylov_basis,temp = np.linalg.qr(krylov_basis)
-# fsa_basis2 = np.transpose(fsa_basis2)
-# fsa_basis = fsa_basis2
-# fsa_basis = np.hstack((fsa_basis,fsa_basis2))
-# from Calculations import gram_schmidt
-# gs = gram_schmidt(fsa_basis)
+psi = fsa_basis[:,np.size(fsa_basis,axis=1)-1]
+from Diagnostics import print_wf
+for n in range(0,np.size(fsa_basis,axis=0)):
+    print("\n")
+    print_wf(fsa_basis[:,n],pxp,1e-5)
+# krylov_basis = np.transpose(krylov_basis)
+# gs = gram_schmidt(krylov_basis)
 # gs.ortho()
-# fsa_basis = gs.ortho_basis
+# krylov_basis = gs.ortho_basis
+# # krylov_basis,temp = np.linalg.qr(krylov_basis)
+# # fsa_basis2 = np.transpose(fsa_basis2)
+# # fsa_basis = fsa_basis2
+# # fsa_basis = np.hstack((fsa_basis,fsa_basis2))
+# # from Calculations import gram_schmidt
+# # gs = gram_schmidt(fsa_basis)
+# # gs.ortho()
+# # fsa_basis = gs.ortho_basis
 
 
-for n in range(0,np.size(k,axis=0)):
-    H.gen(k[n])
-    H.sector.find_eig(k[n])
-    eig_overlap(z,H,k[n]).plot()
+# for n in range(0,np.size(k,axis=0)):
+    # H.gen(k[n])
+    # H.sector.find_eig(k[n])
+    # eig_overlap(z,H,k[n]).plot()
 
-H_fsa = np.dot(np.conj(np.transpose(fsa_basis)),np.dot(H.sector.matrix(),fsa_basis))
-H_krylov = np.dot(np.conj(np.transpose(krylov_basis)),np.dot(H.sector.matrix(),krylov_basis))
-e,u = np.linalg.eigh(H_fsa)
-ek,uk = np.linalg.eigh(H_krylov)
-plt.scatter(e,np.log10(np.abs(u[0,:])**2),marker="D",s=100,label="FSA",alpha=0.6)
-plt.scatter(ek,np.log10(np.abs(uk[0,:])**2),marker="x",color="red",s=100,label="Krylov")
-plt.legend()
-plt.xlabel(r"$E$")
-plt.ylabel(r"$\log(\vert \langle \psi \vert E \rangle \vert^2)$")
-plt.title(r"$Z_3$ Scar approximations, N="+str(pxp.N))
-plt.show()
+# H_fsa = np.dot(np.conj(np.transpose(fsa_basis)),np.dot(H.sector.matrix(),fsa_basis))
+# H_krylov = np.dot(np.conj(np.transpose(krylov_basis)),np.dot(H.sector.matrix(),krylov_basis))
+# e,u = np.linalg.eigh(H_fsa)
+# ek,uk = np.linalg.eigh(H_krylov)
+# plt.scatter(e,np.log10(np.abs(u[0,:])**2),marker="D",s=100,label="FSA",alpha=0.6)
+# plt.scatter(ek,np.log10(np.abs(uk[0,:])**2),marker="x",color="red",s=100,label="Krylov")
+# plt.legend()
+# plt.xlabel(r"$E$")
+# plt.ylabel(r"$\log(\vert \langle \psi \vert E \rangle \vert^2)$")
+# plt.title(r"$Z_3$ Scar approximations, N="+str(pxp.N))
+# plt.show()
 
-t=np.arange(0,20,0.01)
-f_fsa = np.zeros(np.size(t))
-psi_fsa_energy = np.conj(u[0,:])
-for n in range(0,np.size(t,axis=0)):
-    evolved_state = time_evolve_state(psi_fsa_energy,e,t[n])
-    f_fsa[n] = np.abs(np.vdot(evolved_state,psi_fsa_energy))**2
-fidelity(z,H,"use sym").plot(t,z)
-plt.plot(t,f_fsa,label="FSA Projected Dynamics")
-plt.xlabel(r"$t$")
-plt.ylabel(r"$\vert \langle \psi(0) \vert \psi(t) \rangle \vert^2$")
-plt.show()
+# t=np.arange(0,20,0.01)
+# f_fsa = np.zeros(np.size(t))
+# psi_fsa_energy = np.conj(u[0,:])
+# for n in range(0,np.size(t,axis=0)):
+    # evolved_state = time_evolve_state(psi_fsa_energy,e,t[n])
+    # f_fsa[n] = np.abs(np.vdot(evolved_state,psi_fsa_energy))**2
+# fidelity(z,H,"use sym").plot(t,z)
+# plt.plot(t,f_fsa,label="FSA Projected Dynamics")
+# plt.xlabel(r"$t$")
+# plt.ylabel(r"$\vert \langle \psi(0) \vert \psi(t) \rangle \vert^2$")
+# plt.show()
 
-u_exact_comp = np.dot(U[0],H.sector.eigvectors(k[0]))
-u_exact_comp = np.hstack((u_exact_comp,np.dot(U[1],H.sector.eigvectors(k[1]))))
-u_exact_comp = np.hstack((u_exact_comp,np.dot(U[2],H.sector.eigvectors(k[2]))))
+# u_exact_comp = np.dot(U[0],H.sector.eigvectors(k[0]))
+# u_exact_comp = np.hstack((u_exact_comp,np.dot(U[1],H.sector.eigvectors(k[1]))))
+# u_exact_comp = np.hstack((u_exact_comp,np.dot(U[2],H.sector.eigvectors(k[2]))))
 
-u_comp = np.dot(fsa_basis,u)
-uk_comp = np.dot(krylov_basis,uk)
-exact_overlap = np.zeros(np.size(e))
+# u_comp = np.dot(fsa_basis,u)
+# uk_comp = np.dot(krylov_basis,uk)
+# exact_overlap = np.zeros(np.size(e))
 
-for n in range(0,np.size(u_comp,axis=1)):
-    max_overlap = 0
-    for m in range(0,np.size(u_exact_comp,axis=1)):
-        temp = np.abs(np.vdot(u_comp[:,n],u_exact_comp[:,m]))**2
-        if temp > max_overlap:
-            max_overlap = temp
-    exact_overlap[n] = max_overlap
+# for n in range(0,np.size(u_comp,axis=1)):
+    # max_overlap = 0
+    # for m in range(0,np.size(u_exact_comp,axis=1)):
+        # temp = np.abs(np.vdot(u_comp[:,n],u_exact_comp[:,m]))**2
+        # if temp > max_overlap:
+            # max_overlap = temp
+    # exact_overlap[n] = max_overlap
 
-exact_overlapk = np.zeros(np.size(ek))
-for n in range(0,np.size(uk_comp,axis=1)):
-    max_overlap = 0
-    for m in range(0,np.size(u_exact_comp,axis=1)):
-        temp = np.abs(np.vdot(uk_comp[:,n],u_exact_comp[:,m]))**2
-        if temp > max_overlap:
-            max_overlap = temp
-    exact_overlapk[n] = max_overlap
+# exact_overlapk = np.zeros(np.size(ek))
+# for n in range(0,np.size(uk_comp,axis=1)):
+    # max_overlap = 0
+    # for m in range(0,np.size(u_exact_comp,axis=1)):
+        # temp = np.abs(np.vdot(uk_comp[:,n],u_exact_comp[:,m]))**2
+        # if temp > max_overlap:
+            # max_overlap = temp
+    # exact_overlapk[n] = max_overlap
 
-plt.plot(e,exact_overlap,marker="s",label="FSA")
-plt.plot(ek,exact_overlapk,marker="s",label="Krylov")
-plt.xlabel(r"$E$")
-plt.ylabel(r"$\vert \langle \psi_{approx} \vert \psi_{exact} \rangle \vert^2$")
-plt.title(r"$Z_3$ Scar approximations, N="+str(pxp.N))
-plt.legend()
-plt.show()
+# plt.plot(e,exact_overlap,marker="s",label="FSA")
+# plt.plot(ek,exact_overlapk,marker="s",label="Krylov")
+# plt.xlabel(r"$E$")
+# plt.ylabel(r"$\vert \langle \psi_{approx} \vert \psi_{exact} \rangle \vert^2$")
+# plt.title(r"$Z_3$ Scar approximations, N="+str(pxp.N))
+# plt.legend()
+# plt.show()

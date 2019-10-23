@@ -74,10 +74,12 @@ Hp.site_ops[2] = np.array([[0,1],[0,0]])
 # Hp.model_coef = np.array([1,1,a,a,a,a])
 # Hp.uc_size = np.array([2,2,2,2,2,2])
 # Hp.uc_pos = np.array([1,0,0,1,0,1])
+
 Hp.model = np.array([[0,1,0],[0,2,0]])
 Hp.model_coef = np.array([1,1])
 Hp.uc_size = np.array([2,2])
 Hp.uc_pos = np.array([1,0])
+
 Hp.gen()
 
 z=zm_state(2,1,pxp2,1)
@@ -96,10 +98,12 @@ for n in range(0,np.size(e_fsa_diffs,axis=0)):
     e_fsa_diffs[n] = e_fsa[n+1]-e_fsa[n]
 
 
-e_central_gap = e_fsa_diffs[int(pxp.N/2)]
+# e_central_gap = e_fsa_diffs[int(pxp.N/2)]
+e_edge_gap = e_fsa_diffs[0]
 
 #find q such that central gap is same
-def suq2_central_gap(q):
+def suq2_central_gap(var):
+    q = var[0] * np.exp(1j*var[1])
     sp = np.zeros((pxp.base,pxp.base),dtype=complex)
     s=1/2*(pxp.base-1)
     m = np.arange(-s,s)
@@ -171,19 +175,28 @@ def suq2_central_gap(q):
     for n in range(np.size(to_del,axis=0)-1,-1,-1):
         e_diff=np.delete(e_diff,to_del[n])
 
-    print(q,e_diff[int(pxp.N/2)])
-    return e_diff[int(pxp.N/2)]
+    print(var,e_diff[0])
+    # return e_diff[int(pxp.N/2)]
+    return e_diff[0]
 
 
-from scipy.optimize import minimize_scalar
-# res = minimize_scalar(lambda q: np.abs(e_central_gap - suq2_central_gap(q)),method="golden",bracket=(0.7,1.3))
+# from scipy.optimize import minimize_scalar
+# from scipy.optimize import minimize
+# res = minimize(lambda x: np.abs(e_edge_gap - suq2_central_gap(x)),method="powell",x0=[1,2*math.pi/20])
 # res = minimize_scalar(lambda q: np.abs(1.33082727 - suq2_central_gap(q)),method="golden",bracket=(0.7,1.3))
 # q=res.x
-q=1.23374540
+# temp = np.load("./suq2,central_gap_q,perturbed,12.npy")
+# temp = np.load("./suq2,central_gap_q,12.npy_")
+# temp = np.load("./suq2,central_gap_q,10.npy")
+# q=temp[0]
+# q=1.23374540
 # q=1.248714324
 # q=1.2
 # q=1.3
-print("q="+str(q))
+# q=np.exp(1j*0.01)
+# q=1
+# print("q="+str(q))
+q= 1.4403104 * np.exp(1j*0.31487604)
 
 sp = np.zeros((pxp.base,pxp.base),dtype=complex)
 s=1/2*(pxp.base-1)
@@ -231,13 +244,36 @@ Sm = np.conj(np.transpose(Sp))
 H = (Sp + Sm)/2
 e,u = scipy.linalg.eigh(H)
 
-# for count in range(0,np.size(pxp.basis,axis=0)):
-z_energy = np.conj(u[0,:])
-overlap = np.log10(np.abs(z_energy)**2)
+# psi_energy = np.conj(u[0,:])
+# overlap = np.log10(np.abs(psi_energy)**2)
 # plt.scatter(e,overlap)
+# plt.xlabel(r"$E$")
+# plt.ylabel(r"$\log(\vert \langle \psi \vert E \rangle \vert^2)$")
+# plt.title(r"$SU_q(2), q=e^{i * 0.01}, N=$"+str(N))
 # plt.show()
-eigenvalues = e
 
+# t=np.arange(0,60,0.01)
+# f=np.zeros(np.size(t))
+# for n in range(0,np.size(t,axis=0)):
+    # evolved_state = time_evolve_state(psi_energy,e,t[n])
+    # f[n] = np.abs(np.vdot(evolved_state,psi_energy))**2
+# plt.plot(t,f)
+# plt.xlabel(r"$t$")
+# plt.ylabel(r"$\vert \langle \psi(0) \vert \psi(t) \rangle \vert^2$")
+# plt.title(r"$SU_q(2), q=e^{i * 0.01}, N=$"+str(N))
+# plt.show()
+
+psi_energy = np.conj(u[0,:])
+overlap = np.log10(np.abs(psi_energy)**2)
+plt.scatter(e,overlap)
+from Calculations import get_top_band_indices
+scars_indices = get_top_band_indices(e,overlap,N,250,450,e_diff=0.8)
+print(scars_indices)
+for n in range(0,np.size(scars_indices,axis=0)):
+    plt.scatter(e[scars_indices[n]],overlap[scars_indices[n]],marker="x",color="red")
+plt.show()
+
+eigenvalues = e
 to_del=[]
 for n in range(0,np.size(overlap,axis=0)):
     if overlap[n] <-5:
@@ -278,16 +314,19 @@ for n in range(0,np.size(t,axis=0)):
     f_fsa[n] = np.abs(np.vdot(psi_fsa_energy,evolved_state_fsa))**2
     f_suq[n] = np.abs(np.vdot(psi_suq_energy,evolved_state_suq))**2
 plt.plot(t,f_fsa,label = "PXP, FSA Projected")
-plt.plot(t,f_suq,label = "Unconstrained SUq(2) Chain, q=1.2348")
+plt.plot(t,f_suq,label = r"Unconstrained SUq(2) Chain, q=$1.4403104 e^{0.3148 i}$")
 plt.xlabel(r"$t$")
 plt.ylabel(r"$\vert \langle \psi(0) \vert \psi(t) \rangle \vert^2$")
 plt.title(r"$N=10$")
 plt.legend()
 plt.show()
 
-plt.plot(e_diff,label="suq")
-plt.plot(e_fsa_diffs,label="fsa")
-plt.show()
+# plt.plot(e_diff,label="suq")
+# plt.plot(e_fsa_diffs,label="fsa")
+# plt.xlabel(r"$t$")
+# plt.ylabel(r"$\vert \langle \psi(0) \vert \psi(t) \rangle \vert^2$")
+# plt.legend()
+# plt.show()
 
 overlap_fsa = np.log10(np.abs(u_fsa[0,:])**2)
 overlap_suq = np.log10(np.abs(u[0,:])**2)
@@ -299,12 +338,11 @@ for n in range(np.size(to_del,axis=0)-1,-1,-1):
     overlap_suq=np.delete(overlap_suq,to_del[n])
     e=np.delete(e,to_del[n])
     
-
-plt.scatter(e,overlap_suq,label="fsa")
+plt.scatter(e,overlap_suq,label="suq")
 plt.scatter(e_fsa,overlap_fsa,marker="x",label="fsa")
 plt.legend()
-
-plt.legend()
+plt.xlabel(r"$E$")
+plt.ylabel(r"$\log(\vert \langle 000... \vert E \rangle \vert^2)$")
 plt.show()
 # print(e_fsa)
 # print(e)

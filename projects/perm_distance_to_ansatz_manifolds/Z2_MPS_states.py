@@ -27,7 +27,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern'],'size':26})
 rc('text', usetex=True)
 # matplotlib.rcParams['figure.dpi'] = 400
 
-N = 6
+N = 10
 pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
 pxp_syms = model_sym_data(pxp,[translational(pxp),parity(pxp)])
@@ -89,6 +89,7 @@ for n in range(0,np.size(t,axis=0)):
     evolved_state_perm = np.dot(u,evolved_state_perm_energy)
     evolved_states_product = np.dot(perm_basis,evolved_state_perm)
     evolved_states[:,n] = evolved_states_product
+    print(np.vdot(evolved_states_product,evolved_states_product))
 
 system = unlocking_System([0],"periodic",2,N)
 system.gen_basis()
@@ -142,6 +143,9 @@ def TT_wf_distance(psi,tt_params):
     diff = psi - psi_tt
     return np.real(np.vdot(diff,diff))
 
+wf = TT_wf(0,0,math.pi/2,0)
+from Diagnostics import print_wf
+print_wf(wf,pxp,1e-2)
 from scipy.optimize import minimize
 TT_distance = np.zeros(np.size(t))
 pbar=ProgressBar()
@@ -154,6 +158,8 @@ for n in pbar(range(0,np.size(evolved_states,axis=1))):
         last_coef = res.x
     # print(res.x,TT_wf_distance(evolved_states[:,n],res.x))
     TT_distance[n] = TT_wf_distance(evolved_states[:,n],res.x)
+np.save("mps_distance,t,10",t)
+np.save("mps_distance,distance,10",TT_distance)
 print(TT_distance[0])
 plt.plot(t,TT_distance)
 plt.show()

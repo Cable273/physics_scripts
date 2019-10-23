@@ -26,7 +26,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern'],'size':26})
 rc('text', usetex=True)
 # matplotlib.rcParams['figure.dpi'] = 400
 
-N = 18
+N = 12
 pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
 pxp_syms = model_sym_data(pxp,[translational_general(pxp,order=3)])
@@ -200,7 +200,16 @@ H = H_operations.add(H,V3,np.array([1,coef[2]]))
 H.sector.find_eig()
 
 temp = Hp + Hm
-print((np.abs(temp-H.sector.matrix())<1e-5).all())
+def com(a,b):
+    return np.dot(a,b)-np.dot(b,a)
+Hz = 1/2*com(Hp,Hm)
+e,u = np.linalg.eigh(Hz)
+from Diagnostics import print_wf
+print(e[0])
+print_wf(u[:,0],pxp,1e-2)
+print("\n")
+print_wf(u[:,np.size(u,axis=1)-1],pxp,1e-2)
+print(e)
 
 z=zm_state(3,1,pxp)
 fsa_basis = z.prod_basis()
@@ -216,48 +225,50 @@ fsa_basis = np.transpose(fsa_basis)
 from Calculations import gen_krylov_basis
 krylov_basis = gen_krylov_basis(H.sector.matrix(),int(2*pxp.N/3),z.prod_basis(),pxp,orth="gs")
 
+H2 = np.dot(H.sector.matrix(),H.sector.matrix())
+H2_fsa = np.dot(np.conj(np.transpose(fsa_basis)),np.dot(H2,fsa_basis))
 H_fsa = np.dot(np.conj(np.transpose(fsa_basis)),np.dot(H.sector.matrix(),fsa_basis))
-H_krylov = np.dot(np.conj(np.transpose(krylov_basis)),np.dot(H.sector.matrix(),krylov_basis))
-e,u = np.linalg.eigh(H_fsa)
-ek,uk = np.linalg.eigh(H_krylov)
-fsa_overlap = np.log10(np.abs(u[0,:])**2)
-krylov_overlap = np.log10(np.abs(uk[0,:])**2)
+# H_krylov = np.dot(np.conj(np.transpose(krylov_basis)),np.dot(H.sector.matrix(),krylov_basis))
+# e,u = np.linalg.eigh(H_fsa)
+# ek,uk = np.linalg.eigh(H_krylov)
+# fsa_overlap = np.log10(np.abs(u[0,:])**2)
+# krylov_overlap = np.log10(np.abs(uk[0,:])**2)
 
-eig_overlap(z,H).plot()
-plt.scatter(ek,krylov_overlap,marker="x",s=100,color="red",label="Krylov")
-plt.scatter(e,fsa_overlap,marker="D",s=100,alpha=0.6,label="FSA")
-plt.legend()
-plt.xlabel(r"$E$")
-plt.ylabel(r"$\log(\vert \psi \vert E \rangle \vert^2)$")
-plt.title(r"$PXP + \lambda_i V_i$, $Z_3$ Scar approximations, $N=$"+str(pxp.N))
-plt.show()
+# eig_overlap(z,H).plot()
+# plt.scatter(ek,krylov_overlap,marker="x",s=100,color="red",label="Krylov")
+# plt.scatter(e,fsa_overlap,marker="D",s=100,alpha=0.6,label="FSA")
+# plt.legend()
+# plt.xlabel(r"$E$")
+# plt.ylabel(r"$\log(\vert \psi \vert E \rangle \vert^2)$")
+# plt.title(r"$PXP + \lambda_i V_i$, $Z_3$ Scar approximations, $N=$"+str(pxp.N))
+# plt.show()
 
-u_comp = np.dot(fsa_basis,u)
-u_compk = np.dot(fsa_basis,uk)
-exact_overlap = np.zeros(np.size(e))
-for n in range(0,np.size(e,axis=0)):
-    max_overlap = 0
-    for m in range(0,np.size(H.sector.eigvectors(),axis=1)):
-        temp = np.abs(np.vdot(u_comp[:,n],H.sector.eigvectors()[:,m]))**2
-        if temp > max_overlap:
-            max_overlap = temp
-    exact_overlap[n] = max_overlap
+# u_comp = np.dot(fsa_basis,u)
+# u_compk = np.dot(fsa_basis,uk)
+# exact_overlap = np.zeros(np.size(e))
+# for n in range(0,np.size(e,axis=0)):
+    # max_overlap = 0
+    # for m in range(0,np.size(H.sector.eigvectors(),axis=1)):
+        # temp = np.abs(np.vdot(u_comp[:,n],H.sector.eigvectors()[:,m]))**2
+        # if temp > max_overlap:
+            # max_overlap = temp
+    # exact_overlap[n] = max_overlap
 
-exact_overlapk = np.zeros(np.size(ek))
-for n in range(0,np.size(ek,axis=0)):
-    max_overlap = 0
-    for m in range(0,np.size(H.sector.eigvectors(),axis=1)):
-        temp = np.abs(np.vdot(u_compk[:,n],H.sector.eigvectors()[:,m]))**2
-        if temp > max_overlap:
-            max_overlap = temp
-    exact_overlapk[n] = max_overlap
+# exact_overlapk = np.zeros(np.size(ek))
+# for n in range(0,np.size(ek,axis=0)):
+    # max_overlap = 0
+    # for m in range(0,np.size(H.sector.eigvectors(),axis=1)):
+        # temp = np.abs(np.vdot(u_compk[:,n],H.sector.eigvectors()[:,m]))**2
+        # if temp > max_overlap:
+            # max_overlap = temp
+    # exact_overlapk[n] = max_overlap
 
-plt.plot(ek,exact_overlapk,marker="s",label="Krylov")
-plt.plot(e,exact_overlap,marker="s",label="FSA")
-plt.legend()
-plt.xlabel(r"$E$")
-plt.ylabel(r"$\vert \langle \psi_{approx} \vert \psi_{exact} \rangle \vert^2$")
-plt.title(r"$PXP + \lambda_i V_i$, $Z_3$ Scar approximations, $N=$"+str(pxp.N))
-plt.show()
+# plt.plot(ek,exact_overlapk,marker="s",label="Krylov")
+# plt.plot(e,exact_overlap,marker="s",label="FSA")
+# plt.legend()
+# plt.xlabel(r"$E$")
+# plt.ylabel(r"$\vert \langle \psi_{approx} \vert \psi_{exact} \rangle \vert^2$")
+# plt.title(r"$PXP + \lambda_i V_i$, $Z_3$ Scar approximations, $N=$"+str(pxp.N))
+# plt.show()
         
 
