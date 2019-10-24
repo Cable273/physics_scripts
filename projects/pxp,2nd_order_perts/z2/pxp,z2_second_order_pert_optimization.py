@@ -167,7 +167,7 @@ def spacing_error(coef):
     z=zm_state(2,1,pxp,1)
     psi_energy = np.dot(np.conj(np.transpose(u)),z.prod_basis())
     overlap = np.log10(np.abs(psi_energy)**2)
-    scar_indices = get_top_band_indices(e,overlap,int(2*N/3),150,200,e_diff=0.5)
+    scar_indices = get_top_band_indices(e,overlap,int(N),150,200,e_diff=0.5)
     # plt.scatter(e,overlap)
     # for n in range(0,np.size(scar_indices,axis=0)):
         # plt.scatter(e[scar_indices[n]],overlap[scar_indices[n]],marker="x",s=100,color="red")
@@ -194,12 +194,11 @@ def spacing_error(coef):
 
 # coef = np.zeros(9)
 # coef[0] = 0.108
-# coef = np.load("./data/12/pxp,z2,2nd_order_perts,fid_coef,12.npy")
 coef = np.load("./data/14/pxp,z2,2nd_order_perts,fid_coef,14.npy")
 
 res = minimize(lambda coef:fidelity_error(coef),method="powell",x0=coef)
 coef = res.x
-np.save("pxp,z2,2nd_order_perts,fid_coef,"+str(pxp.N),coef)
+
 print(coef)
 error = spacing_error(coef)
 print("ERROR VALUE: "+str(error))
@@ -207,6 +206,8 @@ print("ERROR VALUE: "+str(error))
 Hp_total = deepcopy(Hp[0])
 for n in range(1,len(Hp)):
     Hp_total = H_operations.add(Hp_total,Hp[n],np.array([1,coef[n-1]]))
+
+# Hp_total = H_operations.add(Hp_total,Hp[1],np.array([1,0.108]))
 Hp = Hp_total.sector.matrix()
 Hm = np.conj(np.transpose(Hp))
 
@@ -225,7 +226,6 @@ res = minimize_scalar(lambda t: fidelity_eval(psi_energy,e,t),method="golden",br
 f0 = -fidelity_eval(psi_energy,e,res.x)
 print("F0 REVIVAL")
 print(res.x,fidelity_eval(psi_energy,e,res.x))
-np.savetxt("pxp,z2,f0,"+str(pxp.N),[f0])
 
 for n in range(0,np.size(t,axis=0)):
     f[n] = -fidelity_eval(psi_energy,e,t[n])
@@ -260,72 +260,35 @@ def var(Q,psi):
     Q2 = np.dot(Q,Q)
     return exp(Q2,psi)-exp(Q,psi)**2
 
+fsa_dim = pxp.N
 z=zm_state(2,1,pxp,1)
-
-z0 = z.prod_basis()
-z1= norm(np.dot(Hp,z0))
-z2= norm(np.dot(Hp,z1))
-z3= norm(np.dot(Hp,z2))
-z4= norm(np.dot(Hp,z3))
-z5= norm(np.dot(Hp,z4))
-z6= norm(np.dot(Hp,z5))
-z7= norm(np.dot(Hp,z6))
-z8= norm(np.dot(Hp,z7))
-z9= norm(np.dot(Hp,z8))
-z10= norm(np.dot(Hp,z9))
-# z11= norm(np.dot(Hp,z10))
-# z12= norm(np.dot(Hp,z11))
-
-e = []
-e = np.append(e,exp(Hz,z0))
-e = np.append(e,exp(Hz,z1))
-e = np.append(e,exp(Hz,z2))
-e = np.append(e,exp(Hz,z3))
-e = np.append(e,exp(Hz,z4))
-e = np.append(e,exp(Hz,z5))
-e = np.append(e,exp(Hz,z6))
-e = np.append(e,exp(Hz,z7))
-e = np.append(e,exp(Hz,z8))
-e = np.append(e,exp(Hz,z9))
-e = np.append(e,exp(Hz,z10))
-# e = np.append(e,exp(Hz,z11))
-# e = np.append(e,exp(Hz,z12))
-
-var_vals = []
-var_vals = np.append(var_vals,var(Hz,z0))
-var_vals = np.append(var_vals,var(Hz,z1))
-var_vals = np.append(var_vals,var(Hz,z2))
-var_vals = np.append(var_vals,var(Hz,z3))
-var_vals = np.append(var_vals,var(Hz,z4))
-var_vals = np.append(var_vals,var(Hz,z5))
-var_vals = np.append(var_vals,var(Hz,z6))
-var_vals = np.append(var_vals,var(Hz,z7))
-var_vals = np.append(var_vals,var(Hz,z8))
-var_vals = np.append(var_vals,var(Hz,z9))
-var_vals = np.append(var_vals,var(Hz,z10))
-# var_vals = np.append(var_vals,var(Hz,z11))
-# var_vals = np.append(var_vals,var(Hz,z12))
-
-e_diff = np.zeros(np.size(e)-1)
-for n in range(0,np.size(e_diff,axis=0)):
-    e_diff[n] = e[n+1]-e[n]
-    print(e_diff[n])
+fsa_basis = z.prod_basis()
+current_state  = fsa_basis
+for n in range(0,fsa_dim):
+    next_state = norm(np.dot(Hp,current_state))
+    fsa_basis = np.vstack((fsa_basis,next_state))
+    current_state = next_state
     
+fsa_basis = np.transpose(fsa_basis)
+Hz_exp = np.zeros(np.size(fsa_basis,axis=1))
+Hz_var = np.zeros(np.size(fsa_basis,axis=1))
+for n in range(0,np.size(fsa_basis,axis=1)):
+    Hz_exp[n] = exp(Hz,fsa_basis[:,n])
+    Hz_var[n] = var(Hz,fsa_basis[:,n])
+
+
+e_diff = np.zeros(np.size(Hz_exp)-1)
+for n in range(0,np.size(e_diff,axis=0)):
+    e_diff[n] = Hz_exp[n+1]-Hz_exp[n]
+    print(e_diff[n])
 
 print("\n")
-print(exp(Hz,z0),var(Hz,z0))
-print(exp(Hz,z1),var(Hz,z1))
-print(exp(Hz,z2),var(Hz,z2))
-print(exp(Hz,z3),var(Hz,z3))
-print(exp(Hz,z4),var(Hz,z4))
-print(exp(Hz,z5),var(Hz,z5))
-print(exp(Hz,z6),var(Hz,z6))
-print(exp(Hz,z7),var(Hz,z7))
-print(exp(Hz,z8),var(Hz,z8))
-print(exp(Hz,z9),var(Hz,z9))
-print(exp(Hz,z10),var(Hz,z10))
-# print(exp(Hz,z11),var(Hz,z11))
-# print(exp(Hz,z12),var(Hz,z12))
-np.savetxt("pxp,z2,2nd_order_perts,Hz_eigvalues,"+str(pxp.N),e)
-np.savetxt("pxp,z2,2nd_order_perts,Hz_var,"+str(pxp.N),var_vals)
+for n in range(0,np.size(Hz_exp,axis=0)):
+    print(Hz_exp[n],Hz_var[n])
+
+np.savetxt("pxp,z2,2nd_order_perts,Hz_eigvalues,"+str(pxp.N),Hz_exp)
+np.savetxt("pxp,z2,2nd_order_perts,Hz_var,"+str(pxp.N),Hz_var)
 np.savetxt("pxp,z2,2nd_order_perts,Hz_eig_diffs,"+str(pxp.N),e_diff)
+np.save("pxp,z2,2nd_order_perts,fid_coef,"+str(pxp.N),coef)
+np.savetxt("pxp,z2,f0,"+str(pxp.N),[f0])
+np.savetxt("pxp,z2,spacing_error,"+str(pxp.N),[error])
