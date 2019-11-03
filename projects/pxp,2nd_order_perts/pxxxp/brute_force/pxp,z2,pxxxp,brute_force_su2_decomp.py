@@ -34,7 +34,7 @@ def var(Q,psi):
     Q2 = np.dot(Q,Q)
     return exp(Q2,psi) - exp(Q,psi)**2
 
-N=8
+N=6
 pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
 # pxp_syms = model_sym_data(pxp,[translational(pxp),parity(pxp)])
@@ -162,9 +162,9 @@ def spacing_error(a,pxp_config,pxxxp_config):
     else:
         return 1000
 
-from scipy.optimize import minimize
+from scipy.optimize import minimize_scalar
 def config_error(pxp_config,pxxxp_config):
-    res = minimize(lambda a: spacing_error(a,pxp_config,pxxxp_config),method="Nelder-Mead",x0=[0.122])
+    res = minimize_scalar(lambda a: spacing_error(a,pxp_config,pxxxp_config),method="Golden",bracket=(-0.2,0.2))
     a = res.x
     error = np.abs(a-0.12295995931667794)
     return error

@@ -51,7 +51,3 @@ for n in range(0,np.size(min_n,axis=0)):
     print("\n")
     print(config_error_matrix[min_n[n],min_m[n]])
     print(model_space.basis[min_n[n]],model_space.basis[min_m[n]])
-
-    
-
-
