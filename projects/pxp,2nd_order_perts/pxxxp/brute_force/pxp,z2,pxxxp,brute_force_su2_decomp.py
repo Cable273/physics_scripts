@@ -34,7 +34,7 @@ def var(Q,psi):
     Q2 = np.dot(Q,Q)
     return exp(Q2,psi) - exp(Q,psi)**2
 
-N=6
+N=8
 pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
 # pxp_syms = model_sym_data(pxp,[translational(pxp),parity(pxp)])
@@ -44,6 +44,7 @@ model_space = unlocking_System([0,1],"open",2,N)
 model_space.gen_basis()
 
 def spacing_error(a,pxp_config,pxxxp_config):
+    a = a[0]
     Hp_pxp = np.zeros((pxp.dim,pxp.dim))
     for n in range(0,pxp.dim):
         bits = pxp.basis[n]
@@ -129,6 +130,10 @@ def spacing_error(a,pxp_config,pxxxp_config):
 
     Hz = 1/2*com(Hp,Hm)
 
+    #find lowest weight state
+    e,u = np.linalg.eigh(Hz)
+    lowest_weight = u[:,0]
+
     z=zm_state(2,1,pxp,1)
     fsa_basis =z.prod_basis()
     current_state = fsa_basis
@@ -162,19 +167,34 @@ def spacing_error(a,pxp_config,pxxxp_config):
     else:
         return 1000
 
-from scipy.optimize import minimize_scalar
-def config_error(pxp_config,pxxxp_config):
-    res = minimize_scalar(lambda a: spacing_error(a,pxp_config,pxxxp_config),method="Golden",bracket=(-0.2,0.2))
-    a = res.x
-    error = np.abs(a-0.12295995931667794)
-    return error
+from scipy.optimize import minimize_scalar,minimize
+class Hp_config:
+    def __init__(self,pxp_config,pxxxp_config):
+        self.pxp_config = pxp_config
+        self.pxxxp_config = pxxxp_config
 
-config_error_matrix = np.zeros((model_space.dim,model_space.dim))
+        # res = minimize_scalar(lambda a: spacing_error(a,pxp_config,pxxxp_config),method="Brent")
+        res = minimize(lambda a: spacing_error(a,pxp_config,pxxxp_config),method="Nelder-Mead",x0=0)
+        self.coef = res.x
+        self.ls_error = res.fun
+
+
+config_coef_matrix = np.zeros((model_space.dim,model_space.dim))
+config_ls_error_matrix = np.zeros((model_space.dim,model_space.dim))
 pbar=ProgressBar()
+config_dict = dict()
+c=0
 for n in pbar(range(0,np.size(model_space.basis,axis=0))):
     for m in range(0,np.size(model_space.basis,axis=0)):
         pxp_config = model_space.basis[n]
         pxxxp_config = model_space.basis[m]
-        config_error_matrix[n,m] = config_error(pxp_config,pxxxp_config)
-np.save("pxp,pxxxp,config_error_matrix,"+str(pxp.N),config_error_matrix)
-print(np.min(config_error_matrix))
+
+        config_dict[c] = Hp_config(pxp_config,pxxxp_config)
+        
+        config_coef_matrix[n,m] = config_dict[c].coef
+        config_ls_error_matrix[n,m] = config_dict[c].ls_error
+        c+=1
+import pickle 
+pickle.dump(config_dict,open("pxp,pxxxp,Hp_configs,"+str(pxp.N)+".obj","wb"))
+np.save("pxp,pxxxp,config_coef_matrix,"+str(pxp.N),config_coef_matrix)
+np.save("pxp,pxxxp,config_ls_error_matrix,"+str(pxp.N),config_ls_error_matrix)

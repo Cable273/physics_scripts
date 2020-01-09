@@ -31,19 +31,16 @@ import scipy as sp
 import math
 from Calculations import plot_adjacency_graph
 
-N = 9
+N = 12
 pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
 pxp_syms=model_sym_data(pxp,[translational(pxp)])
 
-H=spin_Hamiltonian(pxp,"x",pxp_syms)
-# H=clock_Hamiltonian(pxp,pxp_syms)
-# H.site_ops[1] = np.array([[0,1/2],[1/2,0]])
-# H.site_ops[2] = np.array([[1,0],[0,0]])
-# H.site_ops[3] = np.array([[0,0],[0,1]])
-# H.model=np.array([[2,1,3],[3,1,2]])
-# H.model_coef = np.array([1,1])
-# # H.model_coef = np.array([1,0])
+H=Hamiltonian(pxp,pxp_syms)
+H.site_ops[1] = np.array([[0,0],[1,0]])
+H.site_ops[2] = np.array([[0,1],[0,0]])
+H.model=np.array([[0,1,2,0],[0,2,1,0]])
+H.model_coef = np.array([1,1])
 k=[0]
 H.gen(k)
 # H.gen()

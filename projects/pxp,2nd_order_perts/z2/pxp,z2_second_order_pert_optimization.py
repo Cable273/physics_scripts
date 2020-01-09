@@ -192,9 +192,9 @@ def spacing_error(coef):
     # else:
     return error
 
-# coef = np.zeros(9)
+coef = np.zeros(9)
 # coef[0] = 0.108
-coef = np.load("./data/all_terms/16/pxp,z2,2nd_order_perts,fid_coef,16.npy")
+# coef = np.load("./data/all_terms/16/pxp,z2,2nd_order_perts,fid_coef,16.npy")
 
 # res = minimize(lambda coef:fidelity_error(coef),method="powell",x0=coef)
 # coef = res.x
@@ -285,6 +285,9 @@ for n in range(0,np.size(e_diff,axis=0)):
 print("\n")
 for n in range(0,np.size(Hz_exp,axis=0)):
     print(Hz_exp[n],Hz_var[n])
+ 
+np.save("z2,Hz_var,16",Hz_var)
+np.save("z2,Hz_diff,16",e_diff)
 
 # np.savetxt("pxp,z2,2nd_order_perts,Hz_eigvalues,"+str(pxp.N),Hz_exp)
 # np.savetxt("pxp,z2,2nd_order_perts,Hz_var,"+str(pxp.N),Hz_var)

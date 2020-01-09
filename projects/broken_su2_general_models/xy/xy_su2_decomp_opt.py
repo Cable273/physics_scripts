@@ -34,30 +34,38 @@ def var(Q,psi):
     Q2 = np.dot(Q,Q)
     return exp(Q2,psi)-exp(Q,psi)**2
 
-N=14
-pxp = unlocking_System([0,1],"periodic",2,N)
+N=12
+pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
+pxp = pxp.U1_sector(3)
+print(pxp.dim)
 pxp_syms = model_sym_data(pxp,[translational(pxp),parity(pxp)])
 
 Hp = dict()
 Hp[0] = Hamiltonian(pxp,pxp_syms)
 Hp[0].site_ops[1] = np.array([[0,0],[1,0]])
 Hp[0].site_ops[2] = np.array([[0,1],[0,0]])
-Hp[0].model = np.array([[0,1,2,0]])
-Hp[0].model_coef = np.array([1])
+Hp[0].model = np.array([[0,2,1,0],[0,1,2,0]])
+Hp[0].model_coef = np.array([1,1])
+Hp[0].uc_size = np.array([2,2])
+Hp[0].uc_pos = np.array([1,0])
+
+# Hp[1] = Hamiltonian(pxp,pxp_syms)
+# Hp[1].site_ops[1] = np.array([[0,0],[1,0]])
+# Hp[1].site_ops[2] = np.array([[0,1],[0,0]])
+# Hp[1].model = np.array([[0,2,1,0,0],[0,0,2,1,0],[0,0,1,2,0],[0,1,2,0,0]])
+# Hp[1].model_coef = np.array([1,1,1,1])
+# Hp[1].uc_size = np.array([2,2,2,2])
+# Hp[1].uc_pos = np.array([1,0,1,0])
 
 Hp[1] = Hamiltonian(pxp,pxp_syms)
 Hp[1].site_ops[1] = np.array([[0,0],[1,0]])
 Hp[1].site_ops[2] = np.array([[0,1],[0,0]])
-Hp[1].model = np.array([[0,1,2,0,0],[0,0,1,2,0]])
-Hp[1].model_coef = np.array([1,1])
-
-Hp[2] = Hamiltonian(pxp,pxp_syms)
-Hp[2].site_ops[1] = np.array([[0,0],[1,0]])
-Hp[2].site_ops[2] = np.array([[0,1],[0,0]])
-Hp[2].site_ops[4] = np.array([[0,0],[0,1]])
-Hp[2].model = np.array([[0,4,0,1,2,0],[0,1,2,0,4,0]])
-Hp[2].model_coef = np.array([1,1])
+Hp[1].site_ops[4] = np.array([[0,0],[0,1]])
+Hp[1].model = np.array([[0,4,0,1,2,0],[0,1,2,0,4,0],[0,2,1,0,4,0],[0,4,0,2,1,0]])
+Hp[1].model_coef = np.array([1,1,1,1])
+Hp[1].uc_size = np.array([2,2,2,2])
+Hp[1].uc_pos = np.array([0,0,1,1])
 
 for n in range(0,len(Hp)):
     Hp[n].gen()
@@ -125,36 +133,51 @@ def spacing_error(coef,psi):
     print(coef,error)
     return error
     
-coef = np.zeros(2)
+coef = np.zeros(1)
 Hp_total = deepcopy(Hp[0])
-for n in range(1,len(Hp)):
-    Hp_total = H_operations.add(Hp_total,Hp[n],np.array([1,coef[n-1]]))
+# for n in range(1,len(Hp)):
+    # Hp_total = H_operations.add(Hp_total,Hp[n],np.array([1,coef[n-1]]))
     
 Hp0 = Hp_total.sector.matrix()
 Hm0 = np.conj(np.transpose(Hp0))
 Hz0 = 1/2 * com(Hp0,Hm0)
-# psi = bin_state(np.array([0,1,0,1,1,0,0,1,0,1,1,0]),pxp).prod_basis()
-# print(exp(Hz0,psi))
-# print(var(Hz0,psi))
+
+# Hz_temp = Hamiltonian(pxp)
+# Hz_temp.site_ops[1] = np.array([[0,0],[1,0]])
+# Hz_temp.site_ops[2] = np.array([[0,1],[0,0]])
+# Hz_temp.site_ops[3] = np.array([[-1/2,0],[0,1/2]])
+# Hz_temp.site_ops[4] = np.array([[0,0],[0,1]])
+# Hz_temp.model = np.array([[0,4,0,0],[0,0,4,0],[0,0,4,0],[0,4,0,0],[0,1,0,2,0],[0,1,0,2,0],[0,2,0,1,0],[0,2,0,1,0]])
+# Hz_temp.model_coef = np.array([1/2,-1/2,1/2,-1/2,1/2,-1/2,-1/2,1/2])
+# Hz_temp.uc_size = np.array([2,2,2,2,2,2,2,2])
+# Hz_temp.uc_pos = np.array([1,1,0,0,1,0,0,1])
+# Hz_temp.gen()
+# plt.matshow(np.abs(Hz_temp.sector.matrix()))
+# plt.matshow(np.abs(Hz0))
+# plt.show()
+# print((np.abs(Hz_temp.sector.matrix()-Hz0)<1e-5).all())
 
 ez,uz = np.linalg.eigh(Hz0)
-print(np.unique(ez))
+print(ez)
 from Diagnostics import print_wf
 count = 0
 psi = uz[:,count]
 from Diagnostics import print_wf
-print("\nLw")
 print_wf(psi,pxp,1e-2)
-print("\n")
+ent=entropy(pxp)
+# print("\nLw")
+# print_wf(psi,pxp,1e-10)
+# print("\n")
 
-# coef = np.load("./data/xy,pert_coef,8.npy")
-# # coef = np.zeros(2)
+# coef = np.load("./data/1_pert_PQP+-P/xy,pert_coef,16.npy")
+# # coef = np.zeros(1)
 # # from scipy.optimize import minimize
-# # # res = minimize(lambda coef: fidelity_error(coef,psi),method="Nelder-Mead",x0=coef)
-# # res = minimize(lambda coef: spacing_error(coef,psi),method="Nelder-Mead",x0=coef)
+# res = minimize(lambda coef: fidelity_error(coef,psi),method="Nelder-Mead",x0=coef)
+# # # res = minimize(lambda coef: spacing_error(coef,psi),method="Nelder-Mead",x0=coef)
 
-# # coef = res.x
-# # np.save("xy,pert_coef,"+str(pxp.N),coef)
+# coef = res.x
+# np.save("xy,pert_coef,"+str(pxp.N),coef)
+# # coef = 0
 
 # Hp_total = deepcopy(Hp[0])
 # for n in range(1,len(Hp)):
@@ -191,20 +214,44 @@ print("\n")
 # e,u = np.linalg.eigh(H)
 
 # psi_energy = np.dot(np.conj(np.transpose(u)),psi)
-# t=np.arange(0,40,0.01)
+# eigenvalues = e
+# overlap = np.log10(np.abs(psi_energy)**2)
+# to_del=[]
+# for n in range(0,np.size(overlap,axis=0)):
+    # if overlap[n] <-10:
+        # to_del = np.append(to_del,n)
+# for n in range(np.size(to_del,axis=0)-1,-1,-1):
+    # overlap=np.delete(overlap,to_del[n])
+    # eigenvalues=np.delete(eigenvalues,to_del[n])
+# plt.scatter(eigenvalues,overlap)
+# plt.xlabel(r"$E$")
+# plt.ylabel(r"$\log(\vert \langle \psi \vert E \rangle \vert^2)$")
+# plt.title(r"$H=P(XX+YY)P$ Perturbed (1st Order), SU(2) Lowest weight overlap, $N=$"+str(pxp.N))
+# plt.show()
+
+# t=np.arange(0,20,0.01)
 # f=np.zeros(np.size(t))
 # for n in range(0,np.size(t,axis=0)):
     # evolved_state = time_evolve_state(psi_energy,e,t[n])
     # f[n] = np.abs(np.vdot(psi_energy,evolved_state))**2
 # plt.plot(t,f)
+# plt.xlabel(r"$t$")
+# plt.ylabel(r"$\vert \langle \psi(0) \vert \psi(t) \rangle \vert^2$")
+# plt.title(r"$H=P(XX+YY)P$ Pertubed (1st Order), SU(2) Lowest weight quench, $N=$"+str(pxp.N))
 # plt.show()
 
-# #entropy
-# ent = entropy(pxp)
-# ent_vals = np.zeros(np.size(e))
-# pbar=ProgressBar()
-# for n in pbar(range(0,np.size(ent_vals,axis=0))):
-    # ent_vals[n] = ent.eval(u[:,n])
-# plt.scatter(e,ent_vals)
-# plt.show()
-    
+# # entropy
+# # ent = entropy(pxp)
+# # ent_vals = np.zeros(np.size(e))
+# # pbar=ProgressBar()
+# # for n in pbar(range(0,np.size(ent_vals,axis=0))):
+    # # ent_vals[n] = ent.eval(u[:,n])
+# # plt.scatter(e,ent_vals)
+# # plt.xlabel(r"$E$")
+# # plt.xlabel(r"$S$")
+# # plt.title(r"$H=P(XX+YY)P$ Perturbed (1st Order), Entropy, $N=$"+str(pxp.N))
+# # plt.show()
+
+# # np.savetxt("xy,Hz,exp,"+str(pxp.N),Hz_exp)
+# # np.savetxt("xy,Hz,var,"+str(pxp.N),Hz_var)
+# # np.savetxt("xy,Hz,diff,"+str(pxp.N),Hz_diff)

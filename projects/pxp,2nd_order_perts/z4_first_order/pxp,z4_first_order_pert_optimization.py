@@ -17,7 +17,6 @@ from Symmetry_Classes import translational,parity,model_sym_data,charge_conjugat
 from Construction_functions import bin_to_int_base_m,int_to_bin_base_m,cycle_bits_state
 from Search_functions import find_index_bisection
 from State_Classes import zm_state,sym_state,prod_state,bin_state,ref_state
-from rw_functions import save_obj,load_obj
 from Calculations import level_stats,fidelity,eig_overlap,entropy,site_precession,site_projection,time_evolve_state
 
 from matplotlib import rc
@@ -160,8 +159,11 @@ def spacing_error(coef):
 # coef = np.array([0.00152401,-1.42847732,0.09801341,0.09784458])
 # res = minimize(lambda coef:fidelity_error(coef),method="powell",x0=coef)
 # coef = res.x
-coef = np.load("./data/pxp,z4,pert_coef.npy")
-# coef = np.zeros(4)
+# coef = np.load("./data/pxp,z4,pert_coef.npy")
+# res = minimize(lambda coef:spacing_error(coef),method="powell",x0=coef)
+# coef = res.x
+coef = np.zeros(4)
+coef[1] = -1
 
 print(coef)
 error = spacing_error(coef)
@@ -182,7 +184,9 @@ Hz = 1/2*com(Hp,Hm)
 e,u = np.linalg.eigh(H)
 t=np.arange(0,20,0.01)
 f=np.zeros(np.size(t))
+f1=np.zeros(np.size(t))
 z=zm_state(4,1,pxp)
+z=ref_state(0,pxp)
 psi_energy = np.dot(np.conj(np.transpose(u)),z.prod_basis())
 
 res = minimize_scalar(lambda t: fidelity_eval(psi_energy,e,t),method="golden",bracket=(3.5,5.5))
@@ -191,15 +195,20 @@ print("F0 REVIVAL")
 print(res.x,fidelity_eval(psi_energy,e,res.x))
 # np.savetxt("pxp,z4,f0,"+str(pxp.N),[f0])
 
-z2=zm_state(4,1,pxp,1)
-z3=zm_state(4,1,pxp,2)
-z4=zm_state(4,1,pxp,3)
+temp_psi = zm_state(4,1,pxp,2)
+temp_psi_energy = np.dot(np.conj(np.transpose(u)),temp_psi.prod_basis())
+
 for n in range(0,np.size(t,axis=0)):
-    f[n] = -fidelity_eval(psi_energy,e,t[n])
-plt.plot(t,f)
+    evolved_state = time_evolve_state(psi_energy,e,t[n])
+    f[n] = np.abs(np.vdot(evolved_state,psi_energy))**2
+    f1[n] = np.abs(np.vdot(evolved_state,temp_psi_energy))**2
+
+plt.plot(t,f,label=r"$\vert 100010001000...\rangle$")
+plt.plot(t,f1,label=r"$\vert 001000100010...\rangle$")
+plt.legend()
 plt.xlabel(r"$t$")
 plt.ylabel(r"$\vert \langle \psi(0) \vert \psi(t) \rangle \vert^2$")
-plt.title(r"$PXP, Z_4$, first order pertubations, N="+str(pxp.N))
+plt.title(r"$PXP - \hat{V}, Z_4$, N="+str(pxp.N))
 plt.show()
 
 overlap = np.log10(np.abs(psi_energy)**2)
@@ -237,23 +246,33 @@ for n in range(0,fsa_dim):
     fsa_basis = np.vstack((fsa_basis,next_state))
     current_state = next_state
 fsa_basis = np.transpose(fsa_basis)
-    
-Hz_exp = np.zeros(np.size(fsa_basis,axis=1))
-Hz_var = np.zeros(np.size(fsa_basis,axis=1))
+from Diagnostics import print_wf
+
 for n in range(0,np.size(fsa_basis,axis=1)):
-    Hz_exp[n] = exp(Hz,fsa_basis[:,n])
-    Hz_var[n] = var(Hz,fsa_basis[:,n])
-    print(Hz_exp[n],Hz_var[n])
+    print("\n")
+    print_wf(fsa_basis[:,n],pxp,1e-2)
+
+    
+    
+# Hz_exp = np.zeros(np.size(fsa_basis,axis=1))
+# Hz_var = np.zeros(np.size(fsa_basis,axis=1))
+# for n in range(0,np.size(fsa_basis,axis=1)):
+    # Hz_exp[n] = exp(Hz,fsa_basis[:,n])
+    # Hz_var[n] = var(Hz,fsa_basis[:,n])
+    # print(Hz_exp[n],Hz_var[n])
+# np.save("z4,Hz_variance,16",Hz_var)
 
 # print("\n")
 # e_diff = np.zeros(np.size(Hz_exp)-1)
 # for n in range(0,np.size(e_diff,axis=0)):
     # e_diff[n] = Hz_exp[n+1]-Hz_exp[n]
     # print(e_diff[n])
+
+# # np.save("z4,Hz_diff,16",e_diff)
     
-# np.save("pxp,z4,pert_coef",coef)
-# np.savetxt("pxp,z4,Hz_eigvalues,"+str(pxp.N),e)
-# np.savetxt("pxp,z4,Hz_var,"+str(pxp.N),var_vals)
-# np.savetxt("pxp,z4,Hz_eig_diffs,"+str(pxp.N),e_diff)
+# # np.savetxt("pxp,z4,pert_coef,"+str(pxp.N),coef)
+# # np.savetxt("pxp,z4,Hz_eigvalues,"+str(pxp.N),Hz_exp)
+# # np.savetxt("pxp,z4,Hz_var,"+str(pxp.N),Hz_var)
+# # np.savetxt("pxp,z4,Hz_eig_diffs,"+str(pxp.N),e_diff)
 # # np.savetxt("pxp,z4,f0,"+str(pxp.N),[f0])
-# np.savetxt("pxp,z4,spacing_error,"+str(pxp.N),[error])
+# # np.savetxt("pxp,z4,spacing_error,"+str(pxp.N),[error])

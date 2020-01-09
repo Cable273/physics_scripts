@@ -2,5 +2,6 @@
 *.pdf
 *.png
 *.gif
+*.txt
 clock_paper_code/
 old_data_plots

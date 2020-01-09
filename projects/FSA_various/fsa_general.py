@@ -19,7 +19,6 @@ from Hamiltonian_Classes import Hamiltonian,H_table,clock_Hamiltonian,spin_Hamil
 from System_Classes import unlocking_System,U1_system
 from Symmetry_Classes import translational,parity,model_sym_data,charge_conjugation
 # from Plotting_Classes import eig_overlap,fidelity,entropy,energy_basis
-from Non_observables import zm
 from Construction_functions import bin_to_int_base_m,int_to_bin_base_m,cycle_bits_state
 from Search_functions import find_index_bisection
 from State_Classes import zm_state,sym_state,prod_state,bin_state,ref_state
@@ -33,7 +32,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern'],'size':26})
 rc('text', usetex=True)
 # matplotlib.rcParams['figure.dpi'] = 400
 
-N = 12
+N = 8
 base=3
 pxp = unlocking_System([0],"periodic",base,N)
 pxp.gen_basis()
