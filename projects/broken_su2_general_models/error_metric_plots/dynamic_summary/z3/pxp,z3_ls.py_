@@ -1,0 +1,137 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from __future__ import division
+import math
+import numpy as np
+import scipy as sp
+import pandas
+import matplotlib.pyplot as plt
+from progressbar import ProgressBar
+from scipy.sparse import linalg as sparse_linalg
+from copy import deepcopy
+
+from Hamiltonian_Classes import Hamiltonian,H_table,clock_Hamiltonian,spin_Hamiltonian,H_operations
+from System_Classes import unlocking_System,U1_system
+from Symmetry_Classes import translational,parity,model_sym_data,charge_conjugation,translational_general,PT
+# from Plotting_Classes import eig_overlap,fidelity,entropy,energy_basis
+from Construction_functions import bin_to_int_base_m,int_to_bin_base_m,cycle_bits_state
+from Search_functions import find_index_bisection
+from State_Classes import zm_state,sym_state,prod_state,bin_state,ref_state
+from rw_functions import save_obj,load_obj
+from Calculations import level_stats,fidelity,eig_overlap,entropy,site_precession,site_projection,time_evolve_state
+
+from matplotlib import rc
+rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern'],'size':26})
+## for Palatino and other serif fonts use:
+#rc('font',**{'family':'serif','serif':['Palatino']})
+rc('text', usetex=True)
+# matplotlib.rcParams['figure.dpi'] = 400
+def com(a,b):
+    return np.dot(a,b)-np.dot(b,a)
+def exp(Q,psi):
+    return np.vdot(psi,np.dot(Q,psi))
+def var(Q,psi):
+    Q2 = np.dot(Q,Q)
+    return exp(Q2,psi)-exp(Q,psi)**2
+
+#init system
+N=24
+pxp = unlocking_System([0],"periodic",2,N)
+pxp.gen_basis()
+pxp_syms = model_sym_data(pxp,[translational_general(pxp,order=3),PT(pxp)])
+
+Hp = dict()
+Hp[0] = Hamiltonian(pxp,pxp_syms)
+Hp[0].site_ops[1] = np.array([[0,0],[1,0]])
+Hp[0].site_ops[2] = np.array([[0,1],[0,0]])
+Hp[0].model = np.array([[0,2,0],[0,1,0],[0,1,0]])
+Hp[0].model_coef = np.array([1,1,1])
+Hp[0].uc_size = np.array([3,3,3])
+Hp[0].uc_pos = np.array([2,0,1])
+
+#1st order
+Hp[1] = Hamiltonian(pxp,pxp_syms)
+Hp[1].site_ops[1] = np.array([[0,0],[1,0]])
+Hp[1].site_ops[2] = np.array([[0,1],[0,0]])
+Hp[1].model = np.array([[0,0,1,0],[0,1,0,0],[0,2,0,0],[0,0,2,0]])
+Hp[1].model_coef = np.array([1,1,1,1])
+Hp[1].uc_size = np.array([3,3,3,3])
+Hp[1].uc_pos = np.array([2,1,2,1])
+
+Hp[2] = Hamiltonian(pxp,pxp_syms)
+Hp[2].site_ops[1] = np.array([[0,0],[1,0]])
+Hp[2].site_ops[2] = np.array([[0,1],[0,0]])
+Hp[2].model = np.array([[0,1,0,0],[0,0,1,0]])
+Hp[2].model_coef = np.array([1,1])
+Hp[2].uc_size = np.array([3,3])
+Hp[2].uc_pos = np.array([0,0])
+
+Hp[3] = Hamiltonian(pxp,pxp_syms)
+Hp[3].site_ops[1] = np.array([[0,0],[1,0]])
+Hp[3].site_ops[2] = np.array([[0,1],[0,0]])
+Hp[3].model = np.array([[0,2,1,2,0],[0,2,1,2,0]])
+Hp[3].model_coef = np.array([1,1])
+Hp[3].uc_size = np.array([3,3])
+Hp[3].uc_pos = np.array([2,0])
+
+z=zm_state(3,1,pxp)
+k=pxp_syms.find_k_ref(z.ref)
+for n in range(0,len(Hp)):
+    # Hp[n].gen()
+    for m in range(0,np.size(k,axis=0)):
+        Hp[n].gen(k[m])
+
+# coef = np.zeros(3)
+# coef[0] = -1
+coef = np.array([0.18243653,-0.10390499,0.0544521])
+# coef = np.loadtxt("../../../../pxp,2nd_order_perts/z3/data/pxp,z3,2nd_order_pert,coef,18")
+
+Hp_total = deepcopy(Hp[0])
+for n in range(1,len(Hp)):
+    Hp_total = H_operations.add(Hp_total,Hp[n],np.array([1,coef[n-1]]))
+Hm = Hp_total.herm_conj()
+
+H = H_operations.add(Hp_total,Hm,np.array([1,1]))
+# Hz = 1/2 * com(Hp_total.sector.matrix(),Hm.sector.matrix())
+# Hz = 1/2 * com(Hp_total.sector.matrix(k),Hm.sector.matrix(k))
+
+# temp = com(Hz,Hp_total.sector.matrix())
+# plt.matshow(np.abs(temp))
+# plt.matshow(np.abs(Hp_total.sector.matrix()))
+# plt.show()
+
+from Calculations import gen_fsa_basis
+fsa_basis = gen_fsa_basis(Hp_total.sector.matrix(k[0]),z.sym_basis(k[0],pxp_syms),pxp.N)
+# fsa_basis = gen_fsa_basis(Hp_total.sector.matrix(),z.prod_basis(),pxp.N)
+P = np.outer(fsa_basis[:,0],fsa_basis[:,0])
+for n in range(1,np.size(fsa_basis,axis=1)):
+    P += np.outer(fsa_basis[:,n],fsa_basis[:,n])
+e,u = np.linalg.eigh(P)
+orth_basis = np.zeros((np.size(fsa_basis,axis=0)))
+for n in range(0,np.size(e,axis=0)):
+    if np.abs(e[n])<1e-5:
+        orth_basis = np.vstack((orth_basis,u[:,n]))
+orth_basis = np.transpose(np.delete(orth_basis,0,axis=0))
+
+# temp_fsa = np.dot(np.conj(np.transpose(fsa_basis)),np.dot(Hp_total.sector.matrix(),fsa_basis))
+# temp2_fsa = np.dot(np.conj(np.transpose(fsa_basis)),np.dot(temp,fsa_basis))
+# print(temp_fsa)
+# print(temp2_fsa)
+# plt.matshow(np.abs(temp_fsa))
+# plt.matshow(np.abs(temp2_fsa))
+# plt.show()
+
+H_fsa = np.dot(np.conj(np.transpose(fsa_basis)),np.dot(H.sector.matrix(k[0]),fsa_basis))
+H_orth = np.dot(np.conj(np.transpose(orth_basis)),np.dot(H.sector.matrix(k[0]),orth_basis))
+e_fsa,u_fsa = np.linalg.eigh(H_fsa)
+e_orth,u_orth = np.linalg.eigh(H_orth)
+e,u = np.linalg.eigh(H.sector.matrix(k[0]))
+
+ls = level_stats(e_fsa)
+print("SU(2)")
+print(ls.mean())
+
+print("Orth")
+ls = level_stats(e_orth)
+print(ls.mean())
