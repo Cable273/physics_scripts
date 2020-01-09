@@ -1,7 +1,11 @@
+*
+!*/
+!*.*
 *.npy
 *.pdf
 *.png
 *.gif
 *.txt
+*.svg
 clock_paper_code/
 old_data_plots
