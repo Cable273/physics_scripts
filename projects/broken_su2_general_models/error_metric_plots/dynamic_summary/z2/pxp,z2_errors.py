@@ -19,7 +19,7 @@ from Construction_functions import bin_to_int_base_m,int_to_bin_base_m,cycle_bit
 from Search_functions import find_index_bisection
 from State_Classes import zm_state,sym_state,prod_state,bin_state,ref_state
 from rw_functions import save_obj,load_obj
-from Calculations import level_stats,fidelity,eig_overlap,entropy,site_precession,site_projection,time_evolve_state
+from Calculations import level_stats,fidelity,eig_overlap,entropy,site_precession,site_projection,time_evolve_state,get_top_band_indices
 
 from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern'],'size':26})
@@ -36,7 +36,7 @@ def var(Q,psi):
     return exp(Q2,psi)-exp(Q,psi)**2
 
 #init system
-N=30
+N=20
 pxp = unlocking_System([0],"periodic",2,N)
 pxp.gen_basis()
 pxp_syms = model_sym_data(pxp,[translational_general(pxp,order=2),PT(pxp)])
@@ -168,6 +168,42 @@ plt.show()
 t=np.arange(0,20,0.01)
 f=fidelity(z,H,"use sym").eval(t,z)
 plt.plot(t,f)
+plt.show()
+
+#identify scar states for entropy highlight
+scar_indices = get_top_band_indices(exact_energy,exact_overlap,pxp.N,100,100,e_diff = 0.5)
+#check identified right states
+plt.scatter(exact_energy,exact_overlap)
+for n in range(0,np.size(scar_indices,axis=0)):
+    plt.scatter(exact_energy[scar_indices[n]],exact_overlap[scar_indices[n]],marker="D",color="green",alpha=0.5,s=100)
+plt.show()
+
+U = pxp_syms.basis_transformation(k[0])
+eigvectors_comp = np.dot(U,H.sector.eigvectors(k[0]))
+fsa_eigs_comp = np.dot(U,np.dot(fsa_basis,u))
+
+#entropy
+ent_vals = np.zeros(np.size(eigvectors_comp,axis=1))
+ent = entropy(pxp)
+pbar=ProgressBar()
+for n in pbar(range(0,np.size(ent_vals,axis=0))):
+    ent_vals[n] = ent.eval(eigvectors_comp[:,n])
+
+ent_fsa = np.zeros(np.size(e))
+for n in range(0,np.size(ent_fsa,axis=0)):
+    ent_fsa[n] = ent.eval(fsa_eigs_comp[:,n])
+
+plt.scatter(exact_energy,ent_vals)
+scar_entropy = np.zeros(np.size(scar_indices))
+scar_energy = np.zeros(np.size(scar_indices))
+for n in range(0,np.size(scar_indices,axis=0)):
+    scar_entropy[n] = ent_vals[scar_indices[n]]
+    scar_energy[n] = exact_energy[scar_indices[n]]
+plt.scatter(scar_energy,scar_entropy,marker="D",color="orange",alpha=0.4,s=200,label="ED Scars")
+plt.scatter(e,ent_fsa,marker="x",color="red",s=200,label=r"$su(2)$ Ritz vectors")
+plt.legend()
+plt.xlabel(r"$E$")
+plt.ylabel(r"$S$")
 plt.show()
 
 # np.save("pxp,0th_order,e,"+str(pxp.N),exact_energy)
